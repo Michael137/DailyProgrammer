@@ -34,27 +34,45 @@ Info:
             AC,6D,5C,10C,8C->4
 */
 #include <string>
+#include <vector>
 #include <iostream>
+#include <algorithm>
+#include <map>
+
+static const std::map<char, int> CardRanks{
+    {'A', 1},
+    {'J', 11},
+    {'Q', 12},
+    {'K', 13},
+};
 
 class Card {
 private:
-    std::string rank_suit_, rank_;
+    std::string rank_suit_;
+    bool face_up_;
+    int rank_;
     char suit_;
 
 public:
-    Card() : rank_suit_(), rank_(), suit_() {};
-    explicit Card(std::string rank_suit) : rank_suit_(std::move(rank_suit)) {
+    Card() : rank_suit_(), face_up_(), rank_(), suit_() {};
+    Card(std::string rank_suit, bool face_up) : rank_suit_(std::move(rank_suit)), face_up_(face_up) {
         std::size_t sz = rank_suit_.size();
         if(sz < 2 || sz > 3) {
             throw("Combination of rank (A,2,3...J,Q,K) and suit (H,C,S,D) is invalid.\nFormat should be: <suit><rank>");
         };
 
         suit_ = rank_suit_.back();
-        rank_ = rank_suit_.substr(0, sz-1);
+
+        const std::string str = rank_suit_.substr(0, sz-1);
+        if( str.find_first_not_of("0123456789") == std::string::npos ) {
+            rank_ = std::stoi(str);
+        } else {
+            rank_ = (CardRanks.find(str.front()))->second;
+        };
     };
 
-    const std::string& Rank() const { return rank_; }
-    const char& Suit() const { return suit_; }
+    const int Rank() const { return rank_; }
+    const char Suit() const { return suit_; }
     const std::string& RankSuit() const { return rank_suit_; }
     const std::string GetSuitName() const {
         switch (suit_) {
@@ -70,14 +88,31 @@ public:
 
         throw("Wrong suit. Something went wrong...");
     };
+    const bool IsFaceUp() const { return face_up_; }
 
     friend std::ostream& operator<<(std::ostream& os, const Card& crd) {
         os << crd.RankSuit();
     };
 };
 
+struct Rule {
+    int points;
+
+    Rule() : points() {};
+    virtual ~Rule();
+    virtual int operator()(const std::vector<Card>& v) const=0;
+};
+
+struct Consecutive : public Rule {
+    Consecutive() : Rule() {};
+
+    int operator()(const std::vector<Card>& v) {
+        return 0;
+    };
+};
+
 int main(int argc, char const *argv[]) {
-    Card crd("5H");
+    Card crd("5H", false);
 
     std::cout << crd << ": " << crd.GetSuitName() << std::endl;
 
