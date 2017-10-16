@@ -38,6 +38,9 @@ Info:
 #include <iostream>
 #include <algorithm>
 #include <map>
+#include <numeric>
+#include <functional>
+#include <unordered_map>
 
 static const std::map<char, int> CardRanks{
     {'A', 1},
@@ -71,6 +74,30 @@ public:
         };
     };
 
+    friend void swap(Card& lhs, Card& rhs) noexcept {
+        using std::swap;
+
+        swap(lhs.rank_suit_,rhs.rank_suit_);
+        swap(lhs.face_up_,rhs.face_up_);
+        swap(lhs.rank_,rhs.rank_);
+        swap(lhs.suit_,rhs.suit_);
+    }
+
+    Card(const Card& rhs) : rank_suit_(rhs.rank_suit_),
+                            face_up_(rhs.face_up_),
+                            rank_(rhs.rank_),
+                            suit_(rhs.suit_) {};
+
+    Card& operator=(Card rhs) {
+        swap(*this, rhs);
+
+        return *this;
+    }
+
+    Card(Card&& rhs) : Card() {
+        swap(*this, rhs);
+    }
+
     const int Rank() const { return rank_; }
     const char Suit() const { return suit_; }
     const std::string& RankSuit() const { return rank_suit_; }
@@ -96,25 +123,82 @@ public:
 };
 
 struct Rule {
-    int points;
-
-    Rule() : points() {};
-    virtual ~Rule();
-    virtual int operator()(const std::vector<Card>& v) const=0;
+    Rule() {};
+    virtual ~Rule() {};
+    virtual int operator()(std::vector<Card>& v) const=0;
 };
 
 struct Consecutive : public Rule {
     Consecutive() : Rule() {};
+    ~Consecutive() {};
+    int operator()(std::vector<Card>& v) const {
+        std::sort(v.begin(), v.end(), [](Card& lhs, Card& rhs) {
+            return lhs.Rank() < rhs.Rank();
+        });
 
-    int operator()(const std::vector<Card>& v) {
-        return 0;
+        int consec = 1;
+        for(auto& crd : v) {
+            Card* next_crd_p = (&crd + 1);
+            if( next_crd_p != nullptr
+                && crd.Rank() + 1 == next_crd_p->Rank()) {
+                    consec++;
+            }
+        }
+
+        return (consec > 2) ? consec : 0;
+    };
+};
+
+struct SumOfHand : public Rule {
+private:
+    int sum_;
+
+public:
+    explicit SumOfHand(int sum) : Rule(), sum_(sum) {};
+    ~SumOfHand() {};
+    int operator()(std::vector<Card>& v) const {
+        return std::accumulate(v.begin(), v.end(), 0, [](int cumul, Card& crd) {
+            return cumul + crd.Rank();
+        }) == sum_;
+    };
+};
+
+struct OfAKind : public Rule {
+    OfAKind() : Rule() {};
+    ~OfAKind() {};
+    int operator()(std::vector<Card>& v) const {
+        std::unordered_map<int, int> ctr_map;
+        for(auto& crd : v) {
+            int crd_rank = crd.Rank();
+            auto it(ctr_map.find(crd_rank));
+            if(it != ctr_map.end()) {
+                it->second++;
+            } else {
+                ctr_map[crd_rank] = 1;
+            }
+        }
+
+        return std::accumulate(ctr_map.begin(), ctr_map.end(), 0, [](int culum, std::pair<const int, int>& elem) {
+            int occ = elem.second;
+            return culum + ((occ > 2) ? occ * 3 : ((occ == 2) ? occ : 0));
+        });
     };
 };
 
 int main(int argc, char const *argv[]) {
-    Card crd("5H", false);
+    std::vector<Card> v;
+    v.push_back(Card("3H", false));
+    v.push_back(Card("AS", false));
+    v.push_back(Card("AC", false));
+    v.push_back(Card("5H", false));
+    v.push_back(Card("4H", true));
 
-    std::cout << crd << ": " << crd.GetSuitName() << std::endl;
+    Consecutive cons_rule;
+    SumOfHand sum_rule(15);
+    OfAKind of_a_kind_rule;
+    std::cout << "Consecutive: " << cons_rule(v) << std::endl;
+    std::cout << "Sum: " << sum_rule(v) << std::endl;
+    std::cout << "Of A Kind: " << of_a_kind_rule(v) << std::endl;
 
     return 0;
 }
