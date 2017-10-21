@@ -1,12 +1,13 @@
 /*
 URL: https://www.reddit.com/r/dailyprogrammer/comments/75p1cs/20171011_challenge_335_intermediate_scoring_a/
+Run: g++ .\ScoringACribbageHand.cpp -std=c++1y -o out3
 Info:
     1 Deck=52 cards
     Rounds: deal,discard,play (can earn points),show (can earn points)
     Players hand: 4 cards + 1 face-up card
     Show round: player scores points based on cards owned
     Point rules:
-        sum(cards)==15 -> 2 points
+        sum(any cards)==15 -> 2 points each
         3 consecutive -> 3 points
         4 consecutive -> 4 points
         5 consecutive -> 5 points
@@ -41,12 +42,21 @@ Info:
 #include <numeric>
 #include <functional>
 #include <unordered_map>
+#include <iterator>
+#include <sstream>
 
-static const std::map<char, int> CardRanks{
+static const std::map<char, int> CardRanks {
     {'A', 1},
-    {'J', 11},
-    {'Q', 12},
-    {'K', 13},
+    {'J', 10},
+    {'Q', 10},
+    {'K', 10},
+};
+
+static const std::map<char, int> CardOrders {
+    {'A', 0},
+    {'J', 1},
+    {'Q', 2},
+    {'K', 3},
 };
 
 class Card {
@@ -58,7 +68,7 @@ private:
 
 public:
     Card() : rank_suit_(), face_up_(), rank_(), suit_() {};
-    Card(std::string rank_suit, bool face_up) : rank_suit_(std::move(rank_suit)), face_up_(face_up) {
+    Card(std::string rank_suit, bool face_up=false) : rank_suit_(std::move(rank_suit)), face_up_(face_up) {
         std::size_t sz = rank_suit_.size();
         if(sz < 2 || sz > 3) {
             throw("Combination of rank (A,2,3...J,Q,K) and suit (H,C,S,D) is invalid.\nFormat should be: <suit><rank>");
@@ -100,6 +110,14 @@ public:
 
     const int Rank() const { return rank_; }
     const char Suit() const { return suit_; }
+    const std::string RankToString() { return rank_suit_.substr(0, rank_suit_.size()-1); }
+    const int RankToOrder() {
+        auto order = CardOrders.find(rank_suit_[0]);
+        if(order != std::end(CardOrders))
+            return rank_ + order->second;
+        else
+            return rank_;
+    }
     const std::string& RankSuit() const { return rank_suit_; }
     const std::string GetSuitName() const {
         switch (suit_) {
@@ -116,10 +134,35 @@ public:
         throw("Wrong suit. Something went wrong...");
     };
     const bool IsFaceUp() const { return face_up_; }
+    void IsFaceUp(bool b) { face_up_=b; }
+
+    Card& operator+=(const Card& rhs) {
+        (*this).rank_ += rhs.rank_;
+
+        return *this;
+    }
+
+    friend bool operator==(const Card& lhs, const Card& rhs) {
+        return lhs.Rank() == rhs.Rank();
+    }
+
+    friend Card operator+(Card lhs, const Card& rhs) {
+        lhs += rhs;
+
+        return lhs;
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const Card& crd) {
-        os << crd.RankSuit();
+        os << crd.rank_suit_;
     };
+
+    friend std::istream& operator>>(std::istream& is, Card& crd) {
+        std::string input;
+        is >> input;
+        crd = Card(input);
+
+        return is;
+    }
 };
 
 struct Rule {
@@ -133,33 +176,45 @@ struct Consecutive : public Rule {
     ~Consecutive() {};
     int operator()(std::vector<Card>& v) const {
         std::sort(v.begin(), v.end(), [](Card& lhs, Card& rhs) {
-            return lhs.Rank() < rhs.Rank();
+            return lhs.RankToOrder() < rhs.RankToOrder();
         });
 
         int consec = 1;
+        int ctr = 0;
         for(auto& crd : v) {
             Card* next_crd_p = (&crd + 1);
-            if( next_crd_p != nullptr
-                && crd.Rank() + 1 == next_crd_p->Rank()) {
+            if( ctr < v.size() - 1
+                && crd.RankToOrder() + 1 == next_crd_p->RankToOrder()) {
                     consec++;
             }
+            ctr++;
         }
 
         return (consec > 2) ? consec : 0;
     };
 };
 
-struct SumOfHand : public Rule {
+struct CardSum : public Rule {
 private:
-    int sum_;
+    int sum_condition_;
+
+    int SumOfSubsets_(std::vector<Card> v, int ctr, int sz, int sum = 0) const {
+        int points = 0;
+        if(ctr > sz) {
+            return (sum == sum_condition_) ? points+2 : points;
+        }
+
+        points += SumOfSubsets_(v, ctr+1, sz, sum + v[ctr].Rank());
+        points += SumOfSubsets_(v, ctr+1, sz, sum);
+        return points;
+    }
 
 public:
-    explicit SumOfHand(int sum) : Rule(), sum_(sum) {};
-    ~SumOfHand() {};
+    explicit CardSum(int sum_condition) : Rule(), sum_condition_(sum_condition) {};
+    ~CardSum() {};
+
     int operator()(std::vector<Card>& v) const {
-        return std::accumulate(v.begin(), v.end(), 0, [](int cumul, Card& crd) {
-            return cumul + crd.Rank();
-        }) == sum_;
+        return SumOfSubsets_(v, 0, 5);
     };
 };
 
@@ -167,9 +222,9 @@ struct OfAKind : public Rule {
     OfAKind() : Rule() {};
     ~OfAKind() {};
     int operator()(std::vector<Card>& v) const {
-        std::unordered_map<int, int> ctr_map;
+        std::unordered_map<std::string, int> ctr_map;
         for(auto& crd : v) {
-            int crd_rank = crd.Rank();
+            std::string crd_rank = crd.RankToString();
             auto it(ctr_map.find(crd_rank));
             if(it != ctr_map.end()) {
                 it->second++;
@@ -178,27 +233,85 @@ struct OfAKind : public Rule {
             }
         }
 
-        return std::accumulate(ctr_map.begin(), ctr_map.end(), 0, [](int culum, std::pair<const int, int>& elem) {
+        return std::accumulate(ctr_map.begin(), ctr_map.end(), 0, [](int culum, std::pair<const std::string, int>& elem) {
             int occ = elem.second;
             return culum + ((occ > 2) ? occ * 3 : ((occ == 2) ? occ : 0));
         });
     };
 };
 
-int main(int argc, char const *argv[]) {
-    std::vector<Card> v;
-    v.push_back(Card("3H", false));
-    v.push_back(Card("AS", false));
-    v.push_back(Card("AC", false));
-    v.push_back(Card("5H", false));
-    v.push_back(Card("4H", true));
+struct SameSuit : public Rule {
+    SameSuit() : Rule() {};
+    ~SameSuit() {};
+    int operator()(std::vector<Card>& v) const {
+        std::map<char, int> counts;
+        char face_up_rank;
 
+        std::for_each(v.begin(), v.end(), [&counts,&face_up_rank](Card crd) {
+            if(!crd.IsFaceUp())
+                counts[crd.Suit()]++;
+            else
+                face_up_rank = crd.Suit();
+        });
+
+        std::pair<char, int> x = *(std::max_element(counts.begin(), counts.end(),
+                                    [](const std::pair<char, int>& p1, const std::pair<char, int>& p2) {
+                                        return p1.second < p2.second; }));
+
+        if( x.second >= 4 )
+            return (x.first == face_up_rank) ? 5 : 4;
+        else
+            return 0;
+    };
+};
+
+struct JackFaceupSuit : public Rule {
+    JackFaceupSuit() : Rule() {};
+    ~JackFaceupSuit() {};
+
+    int operator()(std::vector<Card>& v) const {
+        auto face_up_crd = std::find_if(v.begin(), v.end(), [](Card crd) {
+            return crd.IsFaceUp();
+        });
+
+        char face_up_suit = (*face_up_crd).Suit();
+
+        return std::accumulate(v.begin(),v.end(), 0, [face_up_suit  ](int culum, Card& crd){
+            if(!crd.IsFaceUp() && crd.RankToString() == "J" && crd.Suit() == face_up_suit)
+                return ++culum;
+            else
+                return culum;
+        });
+    }
+};
+
+int main(int argc, char const *argv[]) {
+    std::cout << "Enter 'q' to exit." << '\n';
+
+    int num_of_cards = 5;
     Consecutive cons_rule;
-    SumOfHand sum_rule(15);
+    CardSum sum_rule(15);
     OfAKind of_a_kind_rule;
-    std::cout << "Consecutive: " << cons_rule(v) << std::endl;
-    std::cout << "Sum: " << sum_rule(v) << std::endl;
-    std::cout << "Of A Kind: " << of_a_kind_rule(v) << std::endl;
+    SameSuit same_suit_rule;
+    JackFaceupSuit jack_face_up_suit_rule;
+
+    while(1) {
+        std::vector<Card> v;
+        std::string input;
+        std::cin >> input;
+
+        if(input == "q")
+            break;
+
+        std::replace(input.begin(),input.end(),',', ' ');
+
+        std::stringstream ss(input);
+
+        copy_n(std::istream_iterator<Card>(ss), num_of_cards, std::back_inserter(v));
+        v[4].IsFaceUp(true);
+
+        std::cout << cons_rule(v) + sum_rule(v) + of_a_kind_rule(v) + same_suit_rule(v) + jack_face_up_suit_rule(v) << std::endl;
+    }
 
     return 0;
 }
