@@ -154,6 +154,8 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const Card& crd) {
         os << crd.rank_suit_;
+
+        return os;
     };
 
     friend std::istream& operator>>(std::istream& is, Card& crd) {
