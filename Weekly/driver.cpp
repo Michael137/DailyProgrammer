@@ -7,9 +7,16 @@
 ** Output:
 */
 
+#include "Maze.h"
+#include<iostream>
+
+using namespace trolls;
+
 int main(int argc, char const *argv[]) {
 
-	Maze maze;
+	Maze maze(5,5);
+
+	std::cout << maze << "\n";
 
 	return 0;
 }
