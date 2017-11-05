@@ -9,5 +9,7 @@
 
 int main(int argc, char const *argv[]) {
 
-  return 0;
+	Maze maze;
+
+	return 0;
 }
