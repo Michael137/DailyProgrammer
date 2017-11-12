@@ -47,10 +47,10 @@ void generate( Grid& g, std::pair<int, int> pos ) {
   if(!mask[0] && x > 0 )
     adj_cells.emplace_back(x - 1, y, 0);
 
-  if(!mask[1] && y < s_N )
+  if(!mask[1] && y < s_N - 1 )
     adj_cells.emplace_back(x, y + 1, 1);
 
-  if(!mask[2] && x < s_N )
+  if(!mask[2] && x < s_N - 1 )
     adj_cells.emplace_back(x + 1, y, 2);
 
   if(!mask[3] && y > 0 )
@@ -75,6 +75,7 @@ int main(int argc, char const *argv[]) {
 
   // 2. Choose random starting point in grid
   std::pair<int, int> start = { s_rand.GenerateNumber(0, s_N - 1 ), s_rand.GenerateNumber(0, s_N - 1 ) };
+  std::cout << "Start: " << start.first << " " << start.second << '\n';
 
   // 3. Choose wall and carve passage to adjacent cell if not yet visited
   generate(grid, start);
