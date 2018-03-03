@@ -1,11 +1,10 @@
-#include<iostream>
-#include<unordered_map>
-#include<sstream>
-#include<string>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <unordered_map>
 using namespace std;
 
-static const unordered_map<int, string> digitsMap =
-{
+static const unordered_map<int, string> digitsMap = {
     { 1, "one" },
     { 2, "two" },
     { 3, "three" },
@@ -31,50 +30,48 @@ static const unordered_map<int, string> digitsMap =
     { 50, "fifty" }
 };
 
-int convert( const int h )
+int convert(const int h)
 {
-    if( h == 0 )
+    if (h == 0)
         return 12;
 
-    return ( h > 12 ) ? h - 12 : h;
+    return (h > 12) ? h - 12 : h;
 }
 
-string hrsToString( const int h )
+string hrsToString(const int h)
 {
-    return digitsMap.find( convert( h ) )->second;
+    return digitsMap.find(convert(h))->second;
 }
 
-int firstDigit( int n )
+int firstDigit(int n)
 {
-    while( n >= 10 )
+    while (n >= 10)
         n /= 10;
-    
+
     return n;
 }
 
-string minToString( const int m )
+string minToString(const int m)
 {
-    ostringstream oss( "" );
-    
-    if( m != 0 )
-    {
-        if( m < 10 )
+    ostringstream oss("");
+
+    if (m != 0) {
+        if (m < 10)
             oss << "oh ";
 
-        if( m < 20 )
-            oss << digitsMap.find( m )->second;
-        else
-        {
-            int first = firstDigit( m ) * 10;
-            oss << digitsMap.find( first )->second << " ";
-            oss << digitsMap.find( m - first )->second;
+        if (m < 20)
+            oss << digitsMap.find(m)->second;
+        else {
+            int first = firstDigit(m) * 10;
+            oss << digitsMap.find(first)->second << " ";
+            oss << digitsMap.find(m - first)->second;
         }
     }
 
     return oss.str();
 }
 
-bool isPm( const int h )
+bool isPm(const int h)
 {
     return h >= 12;
 }
@@ -82,13 +79,13 @@ bool isPm( const int h )
 int main()
 {
     int h, m;
-    
+
     cin >> h;
     cin.ignore();
     cin >> m;
-    
+
     ostringstream oss("It's ");
-    oss << hrsToString( h ) << " ";
-    oss << minToString( m ) << " " << ( isPm( h ) ? "pm" : "am" );
+    oss << hrsToString(h) << " ";
+    oss << minToString(m) << " " << (isPm(h) ? "pm" : "am");
     cout << oss.str() << endl;
 }
