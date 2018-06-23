@@ -5,16 +5,8 @@
 
 bool follows( std::string_view str )
 {
-	std::size_t found = str.find( "ie", 0 );
+	std::size_t found = str.find( "ei", 0 );
 
-	while( found != std::string::npos ) {
-		if( found > 0 && std::tolower( str.at( found - 1 ) ) == 'c' )
-			return false;
-
-		found = str.find( "ie", std::min( found + 1, str.size() ) );
-	}
-
-	found = str.find( "ei", 0 );
 	while( found != std::string::npos ) {
 		if( found == 0 || std::tolower( str.at( found - 1 ) ) != 'c' )
 			return false;
@@ -22,7 +14,7 @@ bool follows( std::string_view str )
 		found = str.find( "ei", std::min( found + 1, str.size() ) );
 	}
 
-	return true;
+	return str.find( "cie", 0 ) == std::string::npos;
 }
 
 int main( int argc, char* argv[] )
