@@ -2,7 +2,6 @@
 #include <cmath>
 #include <iostream>
 #include <numeric>
-#include <sstream>
 #include <vector>
 
 std::vector<long> read_input()
@@ -32,7 +31,7 @@ std::vector<long> read_input()
 
 template<typename Num>
 auto compute_ducci_seq( std::vector<Num> nums,
-					   std::vector<std::vector<Num>> history )
+						std::vector<std::vector<Num>> history )
 {
 	if( std::all_of( nums.begin(), nums.end(),
 					 []( Num n ) { return n == 0; } ) )
