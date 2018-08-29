@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Trie
+{
+
+} Trie;
+
 void read_input( char** str, FILE* in_stream )
 {
 	uint64_t buf_sz = 255;
@@ -91,7 +96,9 @@ void bonus()
 // words in the enable1.txt list
 //
 // e.g. boats
-void bonus2() {}
+void bonus2() {
+	// TODO: implement using trie
+}
 
 int main()
 {
