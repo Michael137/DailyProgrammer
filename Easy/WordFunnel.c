@@ -1,8 +1,8 @@
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 void read_input( char** str, FILE* in_stream )
 {
@@ -35,14 +35,12 @@ void read_input_file( char** str, FILE* fp ) { read_input( str, fp ); }
 bool check_strings( char* str1, char const* str2 )
 {
 	uint64_t const len = strlen( str1 );
-	for( uint64_t i = 0; i < len; ++i )
-	{
-		char tmp[len + 1];
+	for( uint64_t i = 0; i < len; ++i ) {
+		char tmp[len];
 		strncpy( tmp, str1, len );
 		memmove( &tmp[i], &tmp[i + 1], len - i );
 
-		if( strncmp( tmp, str2, len ) == 0 )
-			return true;
+		if( strcmp( tmp, str2 ) == 0 ) return true;
 	}
 
 	return false;
@@ -71,22 +69,25 @@ void bonus()
 	FILE* fp;
 	fp = fopen( "enable1.txt", "r" );
 
-	read_input_file( &mut_str, fp );
-	read_input_file( &fin_str, fp );
+	read_input_prompt( &mut_str );
+
+	while( !feof( fp ) ) {
+		read_input_file( &fin_str, fp );
+		if( check_strings( mut_str, fin_str ) ) printf( "%s\n", fin_str );
+		free( fin_str );
+	}
 
 	fclose( fp );
 
-	check_strings( mut_str, fin_str );
-
 	free( mut_str );
-	free( fin_str );
 	mut_str = NULL;
 	fin_str = NULL;
 }
+
 int main()
 {
-	challenge();
-//	bonus();
+	// challenge();
+	bonus();
 
 	return 0;
 }
