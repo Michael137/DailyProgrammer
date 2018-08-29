@@ -36,6 +36,8 @@ bool check_strings( char* str1, char const* str2 )
 {
 	uint64_t const len = strlen( str1 );
 	for( uint64_t i = 0; i < len; ++i ) {
+
+		// Remove character from string
 		char tmp[len];
 		strncpy( tmp, str1, len );
 		memmove( &tmp[i], &tmp[i + 1], len - i );
@@ -84,10 +86,18 @@ void bonus()
 	fin_str = NULL;
 }
 
+// Find all words in enable1.txt that yield
+// check_strings( word, another word in enable1.txt ) for five
+// words in the enable1.txt list
+//
+// e.g. boats
+void bonus2() {}
+
 int main()
 {
 	// challenge();
-	bonus();
+	// bonus();
+	bonus2();
 
 	return 0;
 }
