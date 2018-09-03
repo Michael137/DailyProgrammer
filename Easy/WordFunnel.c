@@ -1,13 +1,9 @@
+#include "../Utils/trie.h"
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-typedef struct Trie
-{
-
-} Trie;
 
 void read_input( char** str, FILE* in_stream )
 {
@@ -96,8 +92,21 @@ void bonus()
 // words in the enable1.txt list
 //
 // e.g. boats
-void bonus2() {
-	// TODO: implement using trie
+void bonus2()
+{
+	char* in_str;
+	Trie* trie;
+	t_create( &trie );
+
+	FILE* fp;
+	fp = fopen( "enable1.txt", "r" );
+
+	while( !feof( fp ) ) {
+		read_input_file( &in_str, fp );
+		t_insert( &trie, in_str );
+	}
+
+	t_free( trie );
 }
 
 int main()
