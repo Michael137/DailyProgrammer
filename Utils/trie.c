@@ -59,7 +59,7 @@ void t_insert( Trie** trie, char const* str )
 
 bool t_search( Trie const* trie, char const* str )
 {
-	t_search_from_node( trie->root, str );
+	return t_search_from_node( trie->root, str );
 }
 
 void t_free_node( TrieNode* node )
