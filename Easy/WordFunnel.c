@@ -104,9 +104,11 @@ void bonus2()
 	while( !feof( fp ) ) {
 		read_input_file( &in_str, fp );
 		t_insert( &trie, in_str );
+		free( in_str );
 	}
 
 	t_free( trie );
+	fclose( fp );
 }
 
 int main()
