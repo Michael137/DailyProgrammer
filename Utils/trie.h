@@ -22,7 +22,7 @@ typedef struct Trie_
 
 void t_insert( Trie** trie, char const* str );
 void t_free( Trie* trie );
-bool t_search( Trie* trie, char const* str );
+bool t_search( Trie const* trie, char const* str );
 void t_create( Trie** trie );
 
 #endif // TRIE_H_IN
